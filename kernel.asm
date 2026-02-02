@@ -1,7 +1,6 @@
 [org 0x1000]
 
-; Set 80x25 Text Mode
-mov ax, 0x03
+mov ax, 0x03        ; Standard Text Mode
 int 0x10
 
 mov si, welcome_msg
@@ -13,37 +12,32 @@ install_loop:
     call clear_buffer
     call get_input
 
-    ; --- Command: lsblk ---
+    ; --- Command Logic ---
     mov si, input_buffer
     mov di, cmd_lsblk
     call strcmp
     jc .do_lsblk
 
-    ; --- Command: fdisk ---
     mov si, input_buffer
     mov di, cmd_fdisk
     call strcmp
     jc .do_fdisk
 
-    ; --- Command: pacman ---
     mov si, input_buffer
     mov di, cmd_pacman
     call strcmp
     jc .do_pacman
 
-    ; --- Command: useradd ---
     mov si, input_buffer
     mov di, cmd_useradd
     call strcmp
     jc .do_useradd
 
-    ; --- Command: neofetch ---
     mov si, input_buffer
     mov di, cmd_neofetch
     call strcmp
     jc .do_neofetch
 
-    ; --- Command: reboot ---
     mov si, input_buffer
     mov di, cmd_reboot
     call strcmp
@@ -51,7 +45,6 @@ install_loop:
 
     cmp byte [input_buffer], 0
     je install_loop
-
     mov si, err_cmd
     call print_string
     jmp install_loop
@@ -113,23 +106,7 @@ install_loop:
 reboot:
     jmp 0xFFFF:0000
 
-; --- UI & SYSTEM HELPERS ---
-
-simulate_progress:
-    mov cx, 20
-.lp:
-    mov ah, 0x0e
-    mov al, '#'
-    int 0x10
-    push cx
-    mov cx, 0x1FFF
-.d: loop .d
-    pop cx
-    loop .lp
-    mov si, newline
-    call print_string
-    ret
-
+; --- UTILITIES ---
 print_string:
     mov ah, 0x0e
 .lp: lodsb
@@ -220,43 +197,49 @@ strcmp:
 .eq: stc
     ret
 
-; --- DATA SECTION ---
+simulate_progress:
+    mov cx, 20
+.lp:
+    mov ah, 0x0e
+    mov al, '#'
+    int 0x10
+    push cx
+    mov cx, 0x1FFF
+.d: loop .d
+    pop cx
+    loop .lp
+    mov si, newline
+    call print_string
+    ret
+
+; --- DATA ---
 is_partitioned db 0
 is_installed   db 0
-
 welcome_msg    db '--- Arch-PingOS Maintenance Console ---', 13, 10, 0
 prompt         db '[root@live-iso]# ', 0
 newline        db 13, 10, 0
-
-; Commands
 cmd_lsblk      db 'lsblk', 0
 cmd_fdisk      db 'fdisk', 0
 cmd_pacman     db 'pacman', 0
 cmd_useradd    db 'useradd', 0
 cmd_neofetch   db 'neofetch', 0
 cmd_reboot     db 'reboot', 0
-
-; Neofetch ASCII Art
 neo_art        db '       /\         root@pingos', 13, 10
                db '      /  \        -----------', 13, 10
                db '     /\   \       OS: Arch-PingOS x86', 13, 10
-               db '    /      \      Host: QEMU Virtual Machine', 13, 10
+               db '    /      \      Host: Physical Hardware', 13, 10
                db '   /   /\   \     Kernel: 1.0.0-ping-custom', 13, 10
                db '  /   /  \   \    Uptime: 16-bit Real Mode', 13, 10
                db ' /___/    \___\   Shell: Ping-Bash', 13, 10, 0
-
-; Tables
 table_header   db 13, 10, 'NAME      MAJ:MIN   SIZE   TYPE   DESCRIPTION', 13, 10, '---------------------------------------------------', 13, 10, 0
 sda_row        db 'sda         8:0     10M    disk   (Physical Drive)', 13, 10, 0
 sda1_row       db '`-sda1      8:1      9M    part   (System Partition)', 13, 10, 0
-
 msg_fdisk_run  db 'Partitioning drive... New partition sda1 created.', 13, 10, 0
 msg_pac_run    db 'Downloading base linux xfce4...', 13, 10, 0
 msg_user_run   db 'Setting up administrative account...', 13, 10, 0
 login_prompt   db 'New Username: ', 0
 pass_prompt    db 'New Password: ', 0
 msg_success    db 13, 10, 'INSTALLATION COMPLETE. Type "reboot".', 13, 10, 0
-
 err_fdisk      db 'Error: Run "fdisk" first!', 13, 10, 0
 err_pacman     db 'Error: Run "pacman" first!', 13, 10, 0
 err_cmd        db 'Unknown command.', 13, 10, 0
