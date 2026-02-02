@@ -12,7 +12,7 @@ disk_reset:
     jc disk_reset
 
 mov ah, 0x02
-mov al, 10
+mov al, 50                  ; Load 50 sectors
 mov ch, 0
 mov dh, 0
 mov cl, 2
