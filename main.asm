@@ -1,20 +1,47 @@
 [org 0x7c00]
 
-; 1. Switch to Video Mode
-mov ah, 0x00    ; Set video mode function
-mov al, 0x13    ; Mode 13h: 320x200 graphics, 256 colors
-int 0x10        ; BIOS video interrupt
-
-; 2. Draw a Pixel
-; We use Interrupt 10h, Function 0Ch
-mov ah, 0x0c    ; Write graphics pixel function
-mov al, 0x0e    ; Color: Yellow (Color index 14)
-mov bh, 0x00    ; Page number
-mov cx, 160     ; X coordinate (Center: 320 / 2)
-mov dx, 100     ; Y coordinate (Center: 200 / 2)
+; Set Video Mode 13h
+mov ah, 0x00
+mov al, 0x13
 int 0x10
 
-jmp $           ; Infinite loop
+; Initial Position (Center)
+mov cx, 160     ; X
+mov dx, 100     ; Y
+
+main_loop:
+    ; Draw current pixel
+    mov ah, 0x0c
+    mov al, 0x0e    ; Yellow
+    int 0x10
+
+    ; Wait for key press
+    mov ah, 0x00
+    int 0x16        ; Keyboard Interrupt (Returns ASCII in AL)
+
+    ; Handle Movement
+    cmp al, 'w'
+    je move_up
+    cmp al, 's'
+    je move_down
+    cmp al, 'a'
+    je move_left
+    cmp al, 'd'
+    je move_right
+    jmp main_loop   ; Ignore other keys
+
+move_up:
+    dec dx
+    jmp main_loop
+move_down:
+    inc dx
+    jmp main_loop
+move_left:
+    dec cx
+    jmp main_loop
+move_right:
+    inc cx
+    jmp main_loop
 
 times 510-($-$$) db 0
 dw 0xaa55
